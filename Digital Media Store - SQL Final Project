@@ -1,0 +1,185 @@
+# For this SQL Final Project, I am doing data analysis by 
+# answering questions around 11 tables, which includes song 
+# tracks, albums, artists, employees, invoice items, and customers.
+
+
+# Q1) Show Customers (their full names, customer ID, and country) who are not in the US.
+
+SELECT FirstName, LastName, CustomerID, Country
+FROM chinook.customers
+WHERE Country != "USA";
+
+
+# Q2) Show only the Customers from Brazil.
+
+SELECT FirstName, LastName, CustomerID
+FROM chinook.customers
+WHERE Country == "Brazil";
+
+# Q3) Find the Invoices of customers who are from Brazil. The resulting table should show the customer's full name, Invoice ID, Date of the invoice, and billing country.
+
+SELECT FirstName, LastName
+, InvoiceId, InvoiceDate
+, BillingCountry
+FROM chinook.customers custs
+
+LEFT JOIN chinook.invoices invs
+ON custs.CustomerId = invs.CustomerId
+
+WHERE BillingCountry = 'Brazil';
+
+# Q4) Show the Employees who are Sales Agents.
+
+SELECT * 
+FROM chinook.employees
+WHERE Title like '%Sales%Agent';
+
+# Q5) Find a unique/distinct list of billing countries from the Invoice table.
+
+SELECT DISTINCT BillingCountry
+FROM chinook.invoices;
+
+
+# Q6) Provide a query that shows the invoices associated with each sales agent. The resulting table should include the Sales Agent's full name.
+
+SELECT invs.InvoiceId, emps.FirstName, emps.LastName
+FROM chinook.employees emps
+
+LEFT JOIN chinook.customers custs
+ON emps.EmployeeId = custs.SupportRepId
+
+LEFT JOIN chinook.invoices invs
+ON custs.CustomerId = invs.InvoiceId
+
+WHERE emps.Title like '%Sales%Agent';
+
+# Q7) Show the Invoice Total, Customer name, Country, and Sales Agent name for all invoices and customers. 
+
+SELECT emps.Firstname, emps.LastName, custs.FirstName
+, custs.LastName, custs.Country, invs.total
+FROM chinook.employees emps
+
+INNER JOIN chinook.customers custs ON custs.SupportRepId = emps.EmployeeId
+INNER JOIN chinook.invoices invs ON invs.CustomerId = custs.CustomerId;
+
+
+# Q8) How many Invoices were there in 2009?
+
+SELECT SUM(Total)
+FROM chinook.invoices
+WHERE InvoiceDate BETWEEN '2009-01-01' AND '2009-12-31';
+
+
+
+# Q9) Write a query that includes the purchased track name with each invoice line ID.
+
+SELECT trac.Name, invs.InvoiceLineId
+FROM chinook.tracks trac
+INNER JOIN chinook.invoice_items invs
+ON trac.TrackId = invs.TrackId;
+
+
+
+
+# Q10) Write a query that includes the purchased track name AND artist name with each invoice line ID.
+
+SELECT invs_items.InvoiceLineId, arts.name
+, tracs.Name
+FROM chinook.Invoice_items invs_items
+
+LEFT JOIN chinook.tracks tracs
+ON invs_items.TrackID=tracs.TrackID
+
+INNER JOIN chinook.albums albs
+ON albs.AlbumID=tracs.AlbumID
+
+LEFT JOIN chinook.artists arts
+ON arts.ArtistID=albs.ArtistID;
+
+# Q11) Provide a query that shows all the Tracks, and include the Album name, Media type, and Genre.
+
+SELECT tracs.Name AS 'Track Name', albs.Title AS 'Album Title'
+, med_types.Name AS 'Media Type', gens.Name AS 'Genre'
+FROM chinook.tracks tracs
+
+INNER JOIN chinook.Albums albs 
+on albs.AlbumId = tracs.AlbumId
+
+INNER JOIN chinook.Media_Types med_types
+on med_types.MediaTypeId = tracs.MediaTypeId
+
+INNER JOIN chinook.Genres gens
+on gens.GenreId = tracs.GenreId;
+
+# Q12) Show the total sales made by each sales agent.
+
+SELECT emps.FirstName, emps.LastName,
+SUM(invs.Total) as 'Total Sales' 
+FROM chinook.Employees emps
+
+INNER JOIN chinook.Customers custs 
+ON custs.SupportRepId = emps.EmployeeId
+
+INNER JOIN chinook.invoices invs 
+ON invs.CustomerId = custs.CustomerId
+
+WHERE emps.Title like '%Sales Support Agent%' 
+GROUP BY emps.FirstName;
+
+# Q13) Which sales agent made the most dollars in sales in 2009?
+
+SELECT emps.FirstName, emps.LastName,
+SUM(invs.Total) as 'Total Sales' 
+FROM chinook.Employees emps
+
+INNER JOIN chinook.Customers custs 
+ON custs.SupportRepId = emps.EmployeeId
+
+INNER JOIN chinook.invoices invs 
+ON invs.CustomerId = custs.CustomerId
+
+WHERE emps.Title like '%Sales Support Agent%' 
+AND invs.InvoiceDate LIKE '2009%'
+GROUP BY emps.FirstName
+ORDER BY SUM(invs.Total) DESC LIMIT 1;
+
+# Q14) Which genre had the most tracks?
+
+SELECT gens.Name, COUNT(gens.Name)
+FROM chinook.genres gens
+LEFT JOIN chinook.tracks tracs
+    ON tracs.GenreId = gens.GenreId
+GROUP BY gens.Name;
+
+# Q15) Count the number of tracks that are in each playlist type. 
+
+SELECT plays.Name, COUNT (DISTINCT tracs.TrackId) AS "Track Amount"
+FROM chinook.playlists plays
+
+LEFT JOIN playlist_track play_tracks
+ON plays.PlaylistId = play_tracks.PlaylistId
+
+LEFT JOIN chinook.tracks tracs
+ON play_tracks.TrackId = tracs.TrackId
+
+GROUP BY plays.Name;
+
+# Q16) Which artist had the most purchases? 
+
+SELECT arts.Name, SUM(invs_items.Quantity) as total_purchases
+FROM chinook.invoice_items invs_items
+
+LEFT JOIN chinook.tracks tracs
+    ON invs_items.TrackId = tracs.TrackId
+
+LEFT JOIN chinook.albums albs
+    ON tracs.AlbumId = albs.AlbumId
+
+LEFT JOIN chinook.artists arts
+    ON arts.ArtistId = albs.ArtistId
+
+GROUP BY arts.ArtistId, arts.Name
+ORDER BY total_purchases DESC
+LIMIT 1;
+
+
